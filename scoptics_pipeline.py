@@ -174,33 +174,50 @@ def remap_coco_to_h36m(coco_keypoints: np.ndarray) -> np.ndarray:
 
 
 # --- MAIN EXECUTION ---
-print("\nStarting Main Pipeline (Batched Pose Estimation)...")
-
-# --- Smart Model Loading ---
 # --- MAIN EXECUTION ---
 print("\nStarting Main Pipeline (Batched Pose Estimation)...")
 
-# --- Smart Model Loading ---
-# This new logic checks if we are running on a CPU.
-# If we are on a CPU (like our M1 Mac), we MUST use the universal .pt models.
-# If we are on a GPU in the cloud, we will use the optimized .engine models.
+# --- Smart Model Loading v3: On-Demand TensorRT Export ---
+# This logic checks if an optimized .engine file exists.
+# If it doesn't, it builds one from the base .pt file.
+# This ensures the .engine file is perfectly compatible with the host GPU.
 
-if CONFIG['DEVICE'].type == 'cpu':
-    print("✅ Running on CPU. Loading standard '.pt' models.")
-    detect_model_path = 'models/yolov8l.pt'
-    pose_model_path = 'models/yolov8x-pose.pt'
-else:
-    print("✅ Running on GPU. Loading optimized '.engine' models.")
-    detect_model_path = CONFIG['OPTIMIZED_DETECT_MODEL_DRIVE_PATH']
-    pose_model_path = CONFIG['OPTIMIZED_POSE_MODEL_DRIVE_PATH']
+def get_or_build_yolo_model(base_model_path, engine_path, inference_size, task):
+    if os.path.exists(engine_path):
+        print(f"✅ Optimized '{task}' model found. Loading from: {engine_path}")
+        return YOLO(engine_path, task=task)
+    else:
+        print(f"⚠️ Optimized '{task}' model not found at {engine_path}.")
+        print(f"   Building from base model: {base_model_path}...")
+        
+        if not os.path.exists(base_model_path):
+            print(f"FATAL: Base model '{base_model_path}' not found. Cannot build engine.")
+            sys.exit(1)
+            
+        model = YOLO(base_model_path, task=task)
+        model.export(format='tensorrt', half=True, workspace=8, imgsz=inference_size)
+        
+        # The exported file might have a different name, so we find it and rename it
+        exported_file = base_model_path.replace('.pt', '.engine')
+        shutil.move(exported_file, engine_path)
+        
+        print(f"✅ Successfully built and saved optimized model to: {engine_path}")
+        return YOLO(engine_path, task=task)
 
-# Load the models based on the paths set above.
-# We specify task='detect' and task='pose' to make it explicit.
-detect_detector = YOLO(detect_model_path, task='detect')
-pose_detector = YOLO(pose_model_path, task='pose')
+# Define paths and sizes
+detect_engine_path = CONFIG['OPTIMIZED_DETECT_MODEL_DRIVE_PATH']
+detect_pt_path = 'models/yolov8l.pt' # Ensure this file is in your models folder
+detect_inference_size = [CONFIG['DETECT_MODEL_INPUT_HEIGHT'], CONFIG['DETECT_MODEL_INPUT_WIDTH']]
 
-print(f"✅ Loaded detection model from: {detect_model_path}")
-print(f"✅ Loaded pose model from: {pose_model_path}")
+pose_engine_path = CONFIG['OPTIMIZED_POSE_MODEL_DRIVE_PATH']
+pose_pt_path = 'models/yolov8x-pose.pt' # Ensure this file is in your models folder
+pose_inference_size = [CONFIG['POSE_MODEL_INPUT_HEIGHT'], CONFIG['POSE_MODEL_INPUT_WIDTH']]
+
+# Get or build the models
+detect_detector = get_or_build_yolo_model(detect_pt_path, detect_engine_path, detect_inference_size, 'detect')
+pose_detector = get_or_build_yolo_model(pose_pt_path, pose_engine_path, pose_inference_size, 'pose')
+
+print("✅ All models loaded.")
 
 # --- STAGE 1: PRE-COMPUTATION FOR TEAM CLASSIFIER ---
 print("--- Stage 1: Collecting crops and fitting classifier ---")
