@@ -4,7 +4,7 @@ name: Build and Push GPU Docker Image
 on:
   push:
     branches:
-      - main # Or 'master', depending on your default branch name
+      - main
 
 jobs:
   build-and-push:
@@ -12,18 +12,16 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-        # This step is crucial for Git LFS
         with:
           lfs: true
 
-      # This step is also crucial for Git LFS
       - name: Checkout LFS objects
         run: git lfs checkout
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }} # This correctly reads 'damolaodujoko53'
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build and push Docker image
@@ -31,4 +29,5 @@ jobs:
         with:
           context: .
           push: true
-          tags: yourdockerhubusername/scoptics-backend:latest
+          # THIS IS THE LINE WE ARE FIXING
+          tags: damolaodujoko53/scoptics-backend:latest
