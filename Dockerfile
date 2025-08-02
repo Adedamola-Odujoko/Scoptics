@@ -7,6 +7,10 @@ FROM pytorch/pytorch:2.1.0-cuda12.1-cudnn8-runtime
 WORKDIR /app
 
 # Install system dependencies required by our Python libraries and tools
+# Set a non-interactive frontend for package installers to prevent them from hanging.
+ENV DEBIAN_FRONTEND=noninteractive
+# Set a default timezone (UTC is standard for servers) to prevent tzdata prompts.
+ENV TZ=Etc/UTC
 RUN apt-get update && apt-get install -y git wget libgl1-mesa-glx libglib2.0-0 && rm -rf /var/lib/apt/lists/*
 
 # The script needs the 'common' module from the VideoPose3D repository.
