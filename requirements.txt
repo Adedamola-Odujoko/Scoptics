@@ -1,0 +1,16 @@
+torch==2.1.0
+torchvision==0.16.0
+torchaudio==2.1.0
+numpy
+opencv-python-headless
+supervision
+ultralytics
+scikit-learn
+umap-learn
+transformers
+Pillow
+websocket-client
+tqdm
+scipy
+sentencepiece
+protobuf
