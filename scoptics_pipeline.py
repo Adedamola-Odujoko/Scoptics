@@ -183,26 +183,34 @@ print("\nStarting Main Pipeline (Batched Pose Estimation)...")
 # This ensures the .engine file is perfectly compatible with the host GPU.
 
 def get_or_build_yolo_model(base_model_path, engine_path, inference_size, task):
+    # First, try to load the engine file if it exists.
     if os.path.exists(engine_path):
-        print(f"✅ Optimized '{task}' model found. Loading from: {engine_path}")
-        return YOLO(engine_path, task=task)
-    else:
-        print(f"⚠️ Optimized '{task}' model not found at {engine_path}.")
-        print(f"   Building from base model: {base_model_path}...")
+        try:
+            print(f"✅ Optimized '{task}' model found. Attempting to load from: {engine_path}")
+            model = YOLO(engine_path, task=task)
+            print(f"   Successfully loaded optimized model.")
+            return model
+        except Exception as e:
+            print(f"❌ FAILED to load optimized model from {engine_path}. Reason: {e}")
+            print(f"   The existing .engine file is likely incompatible. Deleting and rebuilding...")
+            os.remove(engine_path) # Delete the bad engine file
+
+    # If the engine file didn't exist or failed to load, we build it.
+    print(f"⚠️ Building new optimized '{task}' model from base: {base_model_path}...")
+    
+    if not os.path.exists(base_model_path):
+        print(f"FATAL: Base model '{base_model_path}' not found. Cannot build engine.")
+        sys.exit(1)
         
-        if not os.path.exists(base_model_path):
-            print(f"FATAL: Base model '{base_model_path}' not found. Cannot build engine.")
-            sys.exit(1)
-            
-        model = YOLO(base_model_path, task=task)
-        model.export(format='tensorrt', half=True, workspace=8, imgsz=inference_size)
-        
-        # The exported file might have a different name, so we find it and rename it
-        exported_file = base_model_path.replace('.pt', '.engine')
-        shutil.move(exported_file, engine_path)
-        
-        print(f"✅ Successfully built and saved optimized model to: {engine_path}")
-        return YOLO(engine_path, task=task)
+    model = YOLO(base_model_path, task=task)
+    model.export(format='tensorrt', half=True, workspace=8, imgsz=inference_size)
+    
+    # Find the exported file and move it to the correct path
+    exported_file = base_model_path.replace('.pt', '.engine')
+    shutil.move(exported_file, engine_path)
+    
+    print(f"✅ Successfully built and saved new optimized model to: {engine_path}")
+    return YOLO(engine_path, task=task)
 
 # Define paths and sizes
 detect_engine_path = CONFIG['OPTIMIZED_DETECT_MODEL_DRIVE_PATH']
