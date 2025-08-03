@@ -274,7 +274,7 @@ box_annotator = sv.BoxAnnotator(color_lookup=sv.ColorLookup.TRACK)
 label_annotator = sv.LabelAnnotator(color_lookup=sv.ColorLookup.TRACK, text_color=sv.Color.WHITE)
 
 ws = None
-ws_url = "wss://742504cd86fa.ngrok-free.app" # Your ngrok URL here
+ws_url = "wss://8649e45c8a00.ngrok-free.app" # Your ngrok URL here
 
 def send_data_resiliently(frame_data):
     global ws
