@@ -182,24 +182,31 @@ print("\nStarting Main Pipeline (Batched Pose Estimation)...")
 # If it doesn't, it builds one from the base .pt file.
 # This ensures the .engine file is perfectly compatible with the host GPU.
 
+# --- Smart Model Loading v6: Final, Validated Self-Healing TensorRT Export ---
+# This version validates the engine by performing a dummy inference run.
+# This is the only definitive way to know if a TensorRT engine is compatible.
+
 def get_or_build_yolo_model(base_model_path, engine_path, inference_size, task):
-    model = None
-    # First, try to load the engine file if it exists.
+    # First, try to load and validate the engine file if it exists.
     if os.path.exists(engine_path):
-        print(f"✅ Optimized '{task}' model found. Attempting to load from: {engine_path}")
-        model = YOLO(engine_path, task=task)
-        
-        # CRITICAL CHECK: A successfully loaded TensorRT model has a non-None engine attribute.
-        # If the engine is None, the load failed silently.
-        if model and model.engine:
-            print(f"   Successfully loaded and validated optimized model.")
+        print(f"✅ Optimized '{task}' model found. Validating compatibility...")
+        try:
+            model = YOLO(engine_path, task=task)
+            
+            # Create a dummy black image for the validation run.
+            dummy_input = np.zeros((inference_size[0], inference_size[1], 3), dtype=np.uint8)
+            
+            # The real test: run a single prediction. If this fails, the engine is bad.
+            model(dummy_input, verbose=False)
+            
+            print(f"   Validation successful! Model is compatible.")
             return model
-        else:
-            print(f"❌ FAILED to validate the loaded model from {engine_path}.")
+        except Exception as e:
+            print(f"❌ FAILED to validate the loaded model from {engine_path}. Reason: {e}")
             print(f"   The existing .engine file is incompatible. Deleting and rebuilding...")
             os.remove(engine_path) # Delete the bad engine file
 
-    # If the engine file didn't exist or failed to load, we build it.
+    # If the engine file didn't exist or failed validation, we build it.
     print(f"⚠️ Building new optimized '{task}' model from base: {base_model_path}...")
     
     if not os.path.exists(base_model_path):
