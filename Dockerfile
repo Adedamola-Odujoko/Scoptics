@@ -14,8 +14,7 @@ RUN apt-get update && apt-get install -y git wget libgl1-mesa-glx libglib2.0-0 &
 # The script needs the 'common' module from the VideoPose3D repository.
 RUN git clone https://github.com/facebookresearch/VideoPose3D.git
 
-# --- MODIFIED SECTION: Download models instead of COPYing ---
-# Create the directories
+# Create directories
 RUN mkdir -p VideoPose3D/data/checkpoint
 RUN mkdir -p models
 RUN mkdir -p input_video
@@ -23,22 +22,23 @@ RUN mkdir -p input_video
 # Download the PoseLifter model
 RUN wget -O VideoPose3D/data/checkpoint/pretrained_causal_h36m.bin https://dl.fbaipublicfiles.com/video-pose-3d/cpn-ft-243-dbb-causal.bin
 
-# Download YOLO models directly from Ultralytics
+# Download YOLO models
 RUN wget -O models/yolov8l.pt https://github.com/ultralytics/assets/releases/download/v0.0.0/yolov8l.pt
 RUN wget -O models/yolov8x-pose.pt https://github.com/ultralytics/assets/releases/download/v0.0.0/yolov8x-pose.pt
-
-# Download your video file. You need to upload this somewhere public like Google Drive or S3.
-# For this example, I'll use a placeholder URL.
-# YOU MUST REPLACE THIS with a direct download link to your palmer.mp4 video.
-RUN wget -O input_video/palmer.mp4 "https://limewire.com/d/tAEwa#2Fl2nIMQFd"
-
-# --- END MODIFIED SECTION ---
 
 # Copy our list of Python packages into the container
 COPY requirements.txt .
 
-# Install all the Python packages from the list
-RUN pip install --no-cache-dir -r requirements.txt
+# --- MODIFIED SECTION ---
+# Install gdown first, then install the rest of the requirements.
+# gdown is the tool that correctly downloads large files from Google Drive.
+RUN pip install --no-cache-dir gdown && pip install --no-cache-dir -r requirements.txt
+
+# Download your video file using gdown.
+# YOU MUST REPLACE THE LINK BELOW with your actual Google Drive "Share" link.
+RUN gdown 'https://drive.google.com/file/d/YOUR_FILE_ID_HERE/view?usp=sharing' -O input_video/palmer.mp4 && echo "Video download complete. Verifying file size:" && ls -lh input_video/palmer.mp4
+# --- END MODIFIED SECTION ---
+
 
 # Copy only the files that are NOT large
 COPY ./homography_data ./homography_data
