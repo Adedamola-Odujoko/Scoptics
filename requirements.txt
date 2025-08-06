@@ -15,3 +15,8 @@ tqdm
 scipy
 sentencepiece
 protobuf
+ultralytics
+onnx
+onnxslim
+onnxruntime-gpu
+tensorrt
