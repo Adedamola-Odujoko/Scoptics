@@ -1,5 +1,5 @@
 # .github/workflows/main.yml
-name: Build and Push GPU Docker Image
+name: Build and Push Docker Image to Docker Hub
 
 on:
   push:
@@ -10,24 +10,22 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
     steps:
+      # 1. Checkout the repository code.
+      # We DO NOT checkout LFS objects, because the Dockerfile downloads them.
       - name: Checkout repository
         uses: actions/checkout@v4
-        
       
-
-      - name: Checkout LFS objects
-        run: git lfs checkout
-
+      # 2. Log in to Docker Hub using your secrets
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }} # This correctly reads 'damolaodujoko53'
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      # 3. Build the image and push it to your Docker Hub repository
       - name: Build and push Docker image
         uses: docker/build-push-action@v4
         with:
           context: .
           push: true
-          # THIS IS THE LINE WE ARE FIXING
           tags: damolaodujoko53/scoptics-backend:latest
