@@ -30,7 +30,7 @@ RUN wget -O models/yolov8x-pose.pt https://github.com/ultralytics/assets/release
 # Download your video file. You need to upload this somewhere public like Google Drive or S3.
 # For this example, I'll use a placeholder URL.
 # YOU MUST REPLACE THIS with a direct download link to your palmer.mp4 video.
-RUN wget -O input_video/palmer.mp4 "https://drive.google.com/file/d/1qxnpflDbJiFjKx3GMMeynyKy3clqL7R6/view?usp=sharing"
+RUN wget -O input_video/palmer.mp4 "https://limewire.com/d/tAEwa#2Fl2nIMQFd"
 
 # --- END MODIFIED SECTION ---
 
