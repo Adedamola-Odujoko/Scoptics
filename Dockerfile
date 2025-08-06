@@ -36,7 +36,7 @@ RUN pip install --no-cache-dir gdown && pip install --no-cache-dir -r requiremen
 
 # Download your video file using gdown.
 # YOU MUST REPLACE THE LINK BELOW with your actual Google Drive "Share" link.
-RUN gdown 'https://drive.google.com/file/d/YOUR_FILE_ID_HERE/view?usp=sharing' -O input_video/palmer.mp4 && echo "Video download complete. Verifying file size:" && ls -lh input_video/palmer.mp4
+RUN gdown 'https://drive.google.com/file/d/1qxnpflDbJiFjKx3GMMeynyKy3clqL7R6/view?usp=sharing' -O input_video/palmer.mp4 && echo "Video download complete. Verifying file size:" && ls -lh input_video/palmer.mp4
 # --- END MODIFIED SECTION ---
 
 
